@@ -1,0 +1,9 @@
+build*/
+cmake-build-*/
+.vs/
+.idea/
+.claude/
+*.db
+*.o
+*.a
+*.so
