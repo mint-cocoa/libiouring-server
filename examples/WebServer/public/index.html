@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ServerCore v4 — Control Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="scanline"></div>
+    <div class="grid-bg"></div>
+
+    <header>
+        <div class="header-left">
+            <div class="logo-mark">
+                <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+                    <rect x="2" y="2" width="28" height="28" rx="4" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="16" cy="16" r="6" stroke="currentColor" stroke-width="2"/>
+                    <line x1="16" y1="2" x2="16" y2="10" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="16" y1="22" x2="16" y2="30" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="2" y1="16" x2="10" y2="16" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="22" y1="16" x2="30" y2="16" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+            </div>
+            <div>
+                <h1>SERVERCORE <span class="v">v4</span></h1>
+                <p class="tagline">io_uring&thinsp;/&thinsp;C++23&thinsp;/&thinsp;zero-copy</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="status-beacon" id="beacon">
+                <span class="beacon-dot"></span>
+                <span class="beacon-label" id="beacon-label">CONNECTING</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Telemetry strip -->
+        <div class="telemetry">
+            <div class="tel-item">
+                <span class="tel-label">MODE</span>
+                <span class="tel-value" id="tel-mode">--</span>
+            </div>
+            <div class="tel-divider"></div>
+            <div class="tel-item">
+                <span class="tel-label">UPTIME</span>
+                <span class="tel-value mono" id="tel-uptime">00:00</span>
+            </div>
+            <div class="tel-divider"></div>
+            <div class="tel-item">
+                <span class="tel-label">ITEMS</span>
+                <span class="tel-value mono" id="tel-count">0</span>
+            </div>
+            <div class="tel-divider"></div>
+            <div class="tel-item">
+                <span class="tel-label">LAST REQ</span>
+                <span class="tel-value mono" id="tel-latency">--</span>
+            </div>
+        </div>
+
+        <div class="panels">
+            <!-- Left: CRUD panel -->
+            <section class="panel panel-main">
+                <div class="panel-header">
+                    <span class="panel-tag">DATASTORE</span>
+                    <span class="panel-title">Item Registry</span>
+                </div>
+
+                <form id="add-form" class="input-row" autocomplete="off">
+                    <div class="input-group">
+                        <label for="item-name">NAME</label>
+                        <input type="text" id="item-name" placeholder="Enter item name" required>
+                    </div>
+                    <div class="input-group input-narrow">
+                        <label for="item-price">PRICE</label>
+                        <input type="number" id="item-price" placeholder="0" value="0" min="0">
+                    </div>
+                    <button type="submit" class="btn-submit">
+                        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/>
+                        </svg>
+                        INSERT
+                    </button>
+                </form>
+
+                <div class="table-wrap">
+                    <table id="items-table">
+                        <thead>
+                            <tr>
+                                <th class="col-id">#</th>
+                                <th class="col-name">NAME</th>
+                                <th class="col-price">PRICE</th>
+                                <th class="col-action"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="items-body"></tbody>
+                    </table>
+                    <div id="empty-state" class="empty-state">
+                        <div class="empty-icon">
+                            <svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+                                <rect x="6" y="10" width="36" height="28" rx="3"/>
+                                <line x1="6" y1="18" x2="42" y2="18"/>
+                                <line x1="18" y1="18" x2="18" y2="38"/>
+                            </svg>
+                        </div>
+                        <p>No records found</p>
+                        <p class="empty-sub">Insert an item using the form above</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right: Info panels -->
+            <aside class="panel-stack">
+                <!-- Request log -->
+                <section class="panel panel-log">
+                    <div class="panel-header">
+                        <span class="panel-tag">STREAM</span>
+                        <span class="panel-title">Request Log</span>
+                    </div>
+                    <div class="log-entries" id="log-entries">
+                        <div class="log-empty">Waiting for activity...</div>
+                    </div>
+                </section>
+
+                <!-- Architecture -->
+                <section class="panel panel-arch">
+                    <div class="panel-header">
+                        <span class="panel-tag">SPEC</span>
+                        <span class="panel-title">Architecture</span>
+                    </div>
+                    <div class="arch-grid">
+                        <div class="arch-item">
+                            <span class="arch-key">I/O</span>
+                            <span class="arch-val">io_uring · ring-per-thread</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-key">HTTP</span>
+                            <span class="arch-val">llhttp · radix-tree router</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-key">DB</span>
+                            <span class="arch-val">PgWorkerPool · async callback</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-key">NET</span>
+                            <span class="arch-val">SO_REUSEPORT · zero-copy send</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-key">WS</span>
+                            <span class="arch-val">RFC 6455 · binary + text</span>
+                        </div>
+                        <div class="arch-item">
+                            <span class="arch-key">MW</span>
+                            <span class="arch-val">CORS · Logger · Auth · Static</span>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </main>
+
+    <footer>
+        <span class="footer-left">ServerCore v4 &mdash; C++23 high-performance server framework</span>
+        <a href="https://github.com/mint-cocoa/libiouring-server" target="_blank" class="footer-link">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            Source
+        </a>
+    </footer>
+
+    <script src="/app.js"></script>
+</body>
+</html>

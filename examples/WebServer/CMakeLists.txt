@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.22)
 
 add_executable(WebServer
     src/main.cpp
+    src/db/pg_db.cpp
+    src/handler/item_handler.cpp
+    src/handler/health_handler.cpp
 )
 
 target_include_directories(WebServer PRIVATE
