@@ -173,8 +173,10 @@ add_library(ServerWeb STATIC
     src/web/UpstreamSession.cpp
     src/web/UpstreamPool.cpp
     src/web/ReverseProxy.cpp
+    src/web/ProcessExecutor.cpp
     src/web/middleware/Cors.cpp
     src/web/middleware/StaticFiles.cpp
+    src/web/middleware/CookieAuth.cpp
     src/web/ws/WsFrameParser.cpp
     src/web/ws/WsHandshake.cpp
 )
