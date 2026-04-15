@@ -100,6 +100,7 @@ set(_EXAMPLE_DIRS
     examples/BattleServer
     examples/AntBattleServer
     examples/BoidServer
+    examples/ReverseProxy
     examples/benchmarks/GameServerIntegrated
     examples/benchmarks/GameServerSeparated
     examples/benchmarks/GameServerEpoll

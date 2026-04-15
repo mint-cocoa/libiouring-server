@@ -21,7 +21,12 @@ ReverseProxy::ReverseProxy(ReverseProxyOptions opts)
                                            opts_.connect_timeout)) {}
 
 void ReverseProxy::Process(RequestContext& ctx, NextFn next) {
-    const auto* route = FindRoute(ctx.request.path);
+    // Extract hostname from Host header (strip port if present)
+    auto host_header = ctx.request.GetHeader("Host");
+    auto colon = host_header.find(':');
+    auto host = host_header.substr(0, colon);
+
+    const auto* route = FindRoute(host, ctx.request.path);
     if (!route) {
         next();
         return;
@@ -73,8 +78,13 @@ void ReverseProxy::Process(RequestContext& ctx, NextFn next) {
         });
 }
 
-const ProxyRoute* ReverseProxy::FindRoute(std::string_view path) const {
+const ProxyRoute* ReverseProxy::FindRoute(std::string_view host, std::string_view path) const {
     for (const auto& route : opts_.routes) {
+        // Host matching: "*" matches any host
+        if (route.host_pattern != "*" && route.host_pattern != host) {
+            continue;
+        }
+        // Path prefix matching
         if (path.starts_with(route.path_prefix)) {
             return &route;
         }

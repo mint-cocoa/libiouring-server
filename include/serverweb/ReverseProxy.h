@@ -36,7 +36,8 @@ private:
 };
 
 struct ProxyRoute {
-    std::string path_prefix;     // "/api/", "/auth/"
+    std::string host_pattern;    // "app.mintcocoa.cc", "blog.mintcocoa.cc", "*" (wildcard = any host)
+    std::string path_prefix;     // "/api/", "/auth/", "/"
     std::string upstream_host;   // "gateway"
     std::uint16_t upstream_port; // 8000
 };
@@ -54,7 +55,7 @@ public:
     void Process(RequestContext& ctx, NextFn next) override;
 
 private:
-    const ProxyRoute* FindRoute(std::string_view path) const;
+    const ProxyRoute* FindRoute(std::string_view host, std::string_view path) const;
     std::string SerializeRequest(const HttpRequest& request, const ProxyRoute& route) const;
     void HandleWebSocketProxy(RequestContext& ctx, const ProxyRoute& route);
 
