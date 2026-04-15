@@ -112,6 +112,10 @@ foreach(_dir IN LISTS _EXAMPLE_DIRS)
     endif()
 endforeach()
 
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/QuartoPlatform")
+    add_subdirectory(examples/QuartoPlatform)
+endif()
+
 # --- ServerStorage (PostgreSQL worker-pool storage) ----
 
 pkg_check_modules(LIBPQ REQUIRED IMPORTED_TARGET libpq)
@@ -160,6 +164,15 @@ FetchContent_Declare(
 )
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 FetchContent_MakeAvailable(nlohmann_json)
+
+# yaml-cpp (for QuartoPlatform config parsing)
+FetchContent_Declare(
+    yaml-cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_TAG 0.8.0
+)
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(yaml-cpp)
 
 add_library(ServerWeb STATIC
     src/web/HttpParser.cpp
