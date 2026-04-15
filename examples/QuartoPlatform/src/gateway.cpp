@@ -16,6 +16,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <csignal>
 #include <thread>
 
 #if HAS_CURL
@@ -415,10 +416,19 @@ int run_gateway(const Config& config) {
         std::ref(k8s), std::ref(redis), std::ref(config.cleanup),
         std::ref(cleanup_running));
 
+    static std::atomic<bool> running{true};
+    std::signal(SIGINT, [](int) { running = false; });
+    std::signal(SIGTERM, [](int) { running = false; });
+
     spdlog::info("[Gateway] Starting on port {}", config.server.port);
     server.Start();
 
+    while (running) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
     // Shutdown
+    server.Stop();
     cleanup_running.store(false);
     if (cleanup_thread.joinable()) {
         cleanup_thread.join();

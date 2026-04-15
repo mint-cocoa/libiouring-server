@@ -6,8 +6,11 @@
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 
+#include <atomic>
+#include <csignal>
 #include <filesystem>
 #include <fstream>
+#include <thread>
 
 namespace quarto {
 
@@ -168,8 +171,18 @@ int run_editor(const Config& config) {
         ctx.SendJson(nlohmann::json{{"published", items}}.dump());
     });
 
+    static std::atomic<bool> running{true};
+    std::signal(SIGINT, [](int) { running = false; });
+    std::signal(SIGTERM, [](int) { running = false; });
+
     spdlog::info("[Editor] Starting on port {} for user {}", config.server.port, user_id);
     server.Start();
+
+    while (running) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+    server.Stop();
     quarto.StopPreview();
     return 0;
 }
