@@ -40,6 +40,10 @@ add_executable(test_reverse_proxy web/ReverseProxyTest.cpp)
 target_link_libraries(test_reverse_proxy PRIVATE ServerWeb GTest::gtest_main)
 add_test(NAME test_reverse_proxy COMMAND test_reverse_proxy)
 
+add_executable(test_reverse_proxy_integration web/ReverseProxyIntegrationTest.cpp)
+target_link_libraries(test_reverse_proxy_integration PRIVATE ServerWeb GTest::gtest_main)
+add_test(NAME test_reverse_proxy_integration COMMAND test_reverse_proxy_integration)
+
 # --- Temporarily disabled (depend on removed framework/targets) ---
 # ServerWeb tests — depend on ServerWeb target (disabled)
 # ServerGame tests — depend on ServerGame target (disabled)
