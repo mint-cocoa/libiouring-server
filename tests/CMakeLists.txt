@@ -36,6 +36,10 @@ add_executable(test_upstream_pool web/UpstreamPoolTest.cpp)
 target_link_libraries(test_upstream_pool PRIVATE ServerWeb GTest::gtest_main)
 add_test(NAME test_upstream_pool COMMAND test_upstream_pool)
 
+add_executable(test_reverse_proxy web/ReverseProxyTest.cpp)
+target_link_libraries(test_reverse_proxy PRIVATE ServerWeb GTest::gtest_main)
+add_test(NAME test_reverse_proxy COMMAND test_reverse_proxy)
+
 # --- Temporarily disabled (depend on removed framework/targets) ---
 # ServerWeb tests — depend on ServerWeb target (disabled)
 # ServerGame tests — depend on ServerGame target (disabled)
