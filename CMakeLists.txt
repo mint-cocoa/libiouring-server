@@ -177,6 +177,7 @@ add_library(ServerWeb STATIC
     src/web/middleware/Cors.cpp
     src/web/middleware/StaticFiles.cpp
     src/web/middleware/CookieAuth.cpp
+    src/web/auth/JwtCodec.cpp
     src/web/ws/WsFrameParser.cpp
     src/web/ws/WsHandshake.cpp
 )
