@@ -1,0 +1,39 @@
+mode: gateway
+
+server:
+  port: 8080
+  workers: 2
+
+auth:
+  jwt_secret: "${JWT_SECRET}"
+  github_client_id: "${GITHUB_CLIENT_ID}"
+  github_client_secret: "${GITHUB_CLIENT_SECRET}"
+  github_redirect_uri: "${GITHUB_REDIRECT_URI:-http://localhost:8080/auth/github/callback}"
+  frontend_url: "${FRONTEND_URL:-http://localhost:5173}"
+
+proxy:
+  routes:
+    - path_prefix: "/api/"
+      upstream_host: "editor"
+      upstream_port: 8080
+    - path_prefix: "/preview/"
+      upstream_host: "editor"
+      upstream_port: 4000
+      websocket: true
+
+static_sites:
+  - root: "/srv/frontend"
+    spa: true
+  - root: "/srv/published"
+
+redis:
+  url: "${REDIS_URL:-redis://redis:6379}"
+
+k8s:
+  namespace: "${K8S_NAMESPACE:-quarto}"
+  editor_image: "${EDITOR_IMAGE:-localhost:5000/quarto-server:editor-latest}"
+  editor_config: "/etc/quarto/editor.yaml"
+
+cleanup:
+  idle_timeout: 1800
+  interval: 300

@@ -1,0 +1,15 @@
+mode: editor
+
+server:
+  port: 8080
+  workers: 1
+
+editor:
+  workspace: "${WORKSPACE:-/workspace}"
+  published: "${PUBLISHED:-/published}"
+  user_id: "${USER_ID:-unknown}"
+  preview_port: 4000
+
+quarto:
+  render_profile: production
+  timeout: 120
