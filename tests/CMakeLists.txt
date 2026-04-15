@@ -44,6 +44,14 @@ add_executable(test_reverse_proxy_integration web/ReverseProxyIntegrationTest.cp
 target_link_libraries(test_reverse_proxy_integration PRIVATE ServerWeb GTest::gtest_main)
 add_test(NAME test_reverse_proxy_integration COMMAND test_reverse_proxy_integration)
 
+add_executable(test_cookie_auth web/test_cookie_auth.cpp)
+target_link_libraries(test_cookie_auth PRIVATE ServerWeb GTest::gtest_main)
+add_test(NAME test_cookie_auth COMMAND test_cookie_auth)
+
+add_executable(test_process_executor web/test_process_executor.cpp)
+target_link_libraries(test_process_executor PRIVATE ServerWeb GTest::gtest_main)
+add_test(NAME test_process_executor COMMAND test_process_executor)
+
 # --- Temporarily disabled (depend on removed framework/targets) ---
 # ServerWeb tests — depend on ServerWeb target (disabled)
 # ServerGame tests — depend on ServerGame target (disabled)
