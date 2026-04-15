@@ -26,6 +26,24 @@ add_executable(test_pg_result storage/test_pg_result.cpp)
 target_link_libraries(test_pg_result PRIVATE ServerStorage GTest::gtest_main)
 add_test(NAME test_pg_result COMMAND test_pg_result)
 
+# --- ServerWeb tests ---
+
+add_executable(test_upstream_session web/UpstreamSessionTest.cpp)
+target_link_libraries(test_upstream_session PRIVATE ServerWeb GTest::gtest_main)
+add_test(NAME test_upstream_session COMMAND test_upstream_session)
+
+add_executable(test_upstream_pool web/UpstreamPoolTest.cpp)
+target_link_libraries(test_upstream_pool PRIVATE ServerWeb GTest::gtest_main)
+add_test(NAME test_upstream_pool COMMAND test_upstream_pool)
+
+add_executable(test_reverse_proxy web/ReverseProxyTest.cpp)
+target_link_libraries(test_reverse_proxy PRIVATE ServerWeb GTest::gtest_main)
+add_test(NAME test_reverse_proxy COMMAND test_reverse_proxy)
+
+add_executable(test_reverse_proxy_integration web/ReverseProxyIntegrationTest.cpp)
+target_link_libraries(test_reverse_proxy_integration PRIVATE ServerWeb GTest::gtest_main)
+add_test(NAME test_reverse_proxy_integration COMMAND test_reverse_proxy_integration)
+
 # --- Temporarily disabled (depend on removed framework/targets) ---
 # ServerWeb tests — depend on ServerWeb target (disabled)
 # ServerGame tests — depend on ServerGame target (disabled)

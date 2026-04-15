@@ -92,17 +92,25 @@ target_compile_options(ServerCore
 
 # --- Examples (core-only) ----
 
-add_subdirectory(examples/GameServer)
-add_subdirectory(examples/WebServer)
-add_subdirectory(examples/EchoServer)
-add_subdirectory(examples/DX12DemoServer)
-add_subdirectory(examples/BattleServer)
-add_subdirectory(examples/AntBattleServer)
-add_subdirectory(examples/BoidServer)
-add_subdirectory(examples/benchmarks/GameServerIntegrated)
-add_subdirectory(examples/benchmarks/GameServerSeparated)
-add_subdirectory(examples/benchmarks/GameServerEpoll)
-add_subdirectory(tools)
+set(_EXAMPLE_DIRS
+    examples/GameServer
+    examples/WebServer
+    examples/EchoServer
+    examples/DX12DemoServer
+    examples/BattleServer
+    examples/AntBattleServer
+    examples/BoidServer
+    examples/ReverseProxy
+    examples/benchmarks/GameServerIntegrated
+    examples/benchmarks/GameServerSeparated
+    examples/benchmarks/GameServerEpoll
+    tools
+)
+foreach(_dir IN LISTS _EXAMPLE_DIRS)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${_dir}/CMakeLists.txt")
+        add_subdirectory(${_dir})
+    endif()
+endforeach()
 
 # --- ServerStorage (PostgreSQL worker-pool storage) ----
 
@@ -162,6 +170,9 @@ add_library(ServerWeb STATIC
     src/web/RouteGroup.cpp
     src/web/Router.cpp
     src/web/WebServer.cpp
+    src/web/UpstreamSession.cpp
+    src/web/UpstreamPool.cpp
+    src/web/ReverseProxy.cpp
     src/web/middleware/Cors.cpp
     src/web/middleware/StaticFiles.cpp
     src/web/ws/WsFrameParser.cpp
