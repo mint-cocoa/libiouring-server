@@ -1,0 +1,15 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: quarto
+  namespace: argocd
+spec:
+  description: Quarto Publishing Platform
+  sourceRepos:
+    - "https://github.com/mint-cocoa/libiouring-server.git"
+  destinations:
+    - namespace: quarto
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
