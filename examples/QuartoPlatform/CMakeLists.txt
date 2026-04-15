@@ -11,13 +11,16 @@ set(DISABLE_TESTS ON CACHE BOOL "" FORCE)
 set(ENABLE_SSL OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(hiredis)
 
-# libcurl
+# libcurl (optional — OAuth and K8s client need it at runtime)
 find_package(CURL QUIET)
 if(NOT CURL_FOUND)
     find_package(PkgConfig QUIET)
     if(PkgConfig_FOUND)
         pkg_check_modules(CURL QUIET libcurl)
     endif()
+endif()
+if(NOT CURL_FOUND)
+    message(STATUS "libcurl not found — OAuth and K8s client will be compiled as stubs")
 endif()
 
 add_executable(quarto_platform
@@ -39,6 +42,7 @@ target_link_libraries(quarto_platform PRIVATE
     ServerWeb
     yaml-cpp::yaml-cpp
     hiredis::hiredis
+    nlohmann_json::nlohmann_json
 )
 
 if(CURL_FOUND)
