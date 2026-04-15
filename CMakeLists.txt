@@ -170,6 +170,7 @@ add_library(ServerWeb STATIC
     src/web/Router.cpp
     src/web/WebServer.cpp
     src/web/UpstreamSession.cpp
+    src/web/UpstreamPool.cpp
     src/web/middleware/Cors.cpp
     src/web/middleware/StaticFiles.cpp
     src/web/ws/WsFrameParser.cpp

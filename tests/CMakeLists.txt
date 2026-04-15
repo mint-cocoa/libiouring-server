@@ -32,6 +32,10 @@ add_executable(test_upstream_session web/UpstreamSessionTest.cpp)
 target_link_libraries(test_upstream_session PRIVATE ServerWeb GTest::gtest_main)
 add_test(NAME test_upstream_session COMMAND test_upstream_session)
 
+add_executable(test_upstream_pool web/UpstreamPoolTest.cpp)
+target_link_libraries(test_upstream_pool PRIVATE ServerWeb GTest::gtest_main)
+add_test(NAME test_upstream_pool COMMAND test_upstream_pool)
+
 # --- Temporarily disabled (depend on removed framework/targets) ---
 # ServerWeb tests — depend on ServerWeb target (disabled)
 # ServerGame tests — depend on ServerGame target (disabled)
