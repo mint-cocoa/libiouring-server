@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: quarto
+spec:
+  selector:
+    app: gateway
+  ports:
+    - port: 8080
