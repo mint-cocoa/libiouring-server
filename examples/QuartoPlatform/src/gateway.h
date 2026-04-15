@@ -1,5 +1,9 @@
 #pragma once
+
+#include "config.h"
+
 namespace quarto {
-struct Config;
+
 int run_gateway(const Config& config);
-}
+
+} // namespace quarto
