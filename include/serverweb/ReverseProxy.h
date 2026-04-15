@@ -2,6 +2,8 @@
 
 #include <serverweb/Middleware.h>
 #include <serverweb/UpstreamPool.h>
+#include <serverweb/WebSocketHandler.h>
+#include <serverweb/UpstreamSession.h>
 
 #include <chrono>
 #include <memory>
@@ -13,6 +15,25 @@ namespace serverweb {
 class HttpRequest;
 
 namespace middleware {
+
+class WsProxyHandler : public ws::WebSocketHandler {
+public:
+    WsProxyHandler(servercore::ring::IoRing& ring,
+                   servercore::buffer::BufferPool& pool,
+                   const UpstreamTarget& target,
+                   const HttpRequest& original_request);
+
+    void OnOpen(HttpSession& client_session) override;
+    void OnMessage(HttpSession& client_session, std::string_view data, bool is_text) override;
+    void OnClose(HttpSession& client_session, uint16_t code, std::string_view reason) override;
+
+private:
+    servercore::ring::IoRing& ring_;
+    servercore::buffer::BufferPool& pool_;
+    UpstreamTarget target_;
+    std::string upgrade_request_;
+    std::shared_ptr<UpstreamSession> upstream_;
+};
 
 struct ProxyRoute {
     std::string path_prefix;     // "/api/", "/auth/"
@@ -35,6 +56,7 @@ public:
 private:
     const ProxyRoute* FindRoute(std::string_view path) const;
     std::string SerializeRequest(const HttpRequest& request, const ProxyRoute& route) const;
+    void HandleWebSocketProxy(RequestContext& ctx, const ProxyRoute& route);
 
     ReverseProxyOptions opts_;
     std::shared_ptr<UpstreamPool> pool_;

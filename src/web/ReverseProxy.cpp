@@ -8,6 +8,8 @@
 
 #include <servercore/ring/IoRing.h>
 
+#include <spdlog/spdlog.h>
+
 #include <memory>
 #include <string>
 
@@ -22,6 +24,13 @@ void ReverseProxy::Process(RequestContext& ctx, NextFn next) {
     const auto* route = FindRoute(ctx.request.path);
     if (!route) {
         next();
+        return;
+    }
+
+    // WebSocket upgrade detection
+    auto upgrade = ctx.request.GetHeader("Upgrade");
+    if (upgrade == "websocket") {
+        HandleWebSocketProxy(ctx, *route);
         return;
     }
 
@@ -124,6 +133,113 @@ std::string ReverseProxy::SerializeRequest(const HttpRequest& request,
     }
 
     return result;
+}
+
+void ReverseProxy::HandleWebSocketProxy(RequestContext& ctx, const ProxyRoute& route) {
+    auto* ring = servercore::ring::IoRing::Current();
+    if (!ring) {
+        ctx.SendError(HttpStatus::kInternalServerError, "No IoRing available");
+        return;
+    }
+
+    UpstreamTarget target{route.upstream_host, route.upstream_port};
+    auto handler = std::make_shared<WsProxyHandler>(*ring, ctx.pool, target, ctx.request);
+    ctx.session.UpgradeToWebSocket(handler);
+}
+
+// ---------------------------------------------------------------------------
+// WsProxyHandler
+// ---------------------------------------------------------------------------
+
+WsProxyHandler::WsProxyHandler(servercore::ring::IoRing& ring,
+                                servercore::buffer::BufferPool& pool,
+                                const UpstreamTarget& target,
+                                const HttpRequest& original_request)
+    : ring_(ring), pool_(pool), target_(target) {
+    // Build the upgrade request to forward to upstream
+    upgrade_request_.reserve(512);
+
+    // Request line
+    upgrade_request_.append("GET ");
+    upgrade_request_.append(original_request.path);
+    if (!original_request.query.empty()) {
+        upgrade_request_.append("?");
+        upgrade_request_.append(original_request.query);
+    }
+    upgrade_request_.append(" HTTP/1.1\r\n");
+
+    // Host header pointing to upstream
+    upgrade_request_.append("Host: ");
+    upgrade_request_.append(target_.host);
+    upgrade_request_.append(":");
+    upgrade_request_.append(std::to_string(target_.port));
+    upgrade_request_.append("\r\n");
+
+    // Forward WebSocket-specific headers
+    static constexpr std::string_view kWsHeaders[] = {
+        "Upgrade",
+        "Connection",
+        "Sec-WebSocket-Key",
+        "Sec-WebSocket-Version",
+        "Sec-WebSocket-Protocol",
+        "Sec-WebSocket-Extensions",
+        "Origin",
+    };
+    for (const auto& name : kWsHeaders) {
+        auto val = original_request.GetHeader(name);
+        if (!val.empty()) {
+            upgrade_request_.append(name);
+            upgrade_request_.append(": ");
+            upgrade_request_.append(val);
+            upgrade_request_.append("\r\n");
+        }
+    }
+
+    upgrade_request_.append("\r\n");
+}
+
+void WsProxyHandler::OnOpen(HttpSession& client_session) {
+    spdlog::debug("[WsProxy] Client connected, connecting to upstream {}:{}",
+                  target_.host, target_.port);
+
+    upstream_ = std::make_shared<UpstreamSession>(ring_, pool_);
+    upstream_->Init();
+
+    // Capture client_session as shared_ptr so it stays alive in callbacks
+    auto session_ptr = std::static_pointer_cast<HttpSession>(
+        client_session.shared_from_this());
+
+    upstream_->Connect(
+        target_.host, target_.port, std::move(upgrade_request_),
+        // on_response: upstream sent back a 101 (or other); we already sent
+        // 101 to the client via UpgradeToWebSocket — nothing more to do here.
+        [](int status_code,
+           std::vector<std::pair<std::string, std::string>> /*headers*/,
+           std::vector<std::byte> /*body*/) {
+            spdlog::debug("[WsProxy] Upstream handshake response status {}", status_code);
+        },
+        // on_error: close the client WebSocket
+        [session_ptr](std::string error) {
+            spdlog::warn("[WsProxy] Upstream connect error: {}", error);
+            session_ptr->WsClose(1014, "upstream error");
+        });
+}
+
+void WsProxyHandler::OnMessage(HttpSession& /*client_session*/,
+                                std::string_view data, bool is_text) {
+    // Full bidirectional relay requires upstream WebSocket framing support
+    // (to be added later). For now just log.
+    spdlog::debug("[WsProxy] Client→Upstream: {} bytes ({})",
+                  data.size(), is_text ? "text" : "binary");
+}
+
+void WsProxyHandler::OnClose(HttpSession& /*client_session*/,
+                              uint16_t code, std::string_view reason) {
+    spdlog::debug("[WsProxy] Client closed: code={} reason={}", code, reason);
+    if (upstream_) {
+        upstream_->Close();
+        upstream_.reset();
+    }
 }
 
 } // namespace serverweb::middleware
