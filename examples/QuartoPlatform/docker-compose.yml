@@ -1,0 +1,51 @@
+services:
+  gateway:
+    image: quarto-server:gateway
+    privileged: true
+    ports:
+      - "8080:8080"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    environment:
+      JWT_SECRET: dev-secret-change-me
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-test}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-test}
+      GITHUB_REDIRECT_URI: http://localhost:8080/auth/github/callback
+      FRONTEND_URL: /
+      REDIS_URL: redis://redis:6379
+      K8S_NAMESPACE: quarto
+      EDITOR_IMAGE: quarto-server:editor-latest
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  editor:
+    image: quarto-server:editor
+    privileged: true
+    ports:
+      - "9090:8080"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    environment:
+      USER_ID: testuser
+      WORKSPACE: /workspace
+      PUBLISHED: /published
+    volumes:
+      - editor-workspace:/workspace
+      - published-data:/published
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  editor-workspace:
+  published-data:

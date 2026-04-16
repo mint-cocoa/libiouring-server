@@ -1,3 +1,5 @@
+const PREVIEW_BASE = import.meta.env.VITE_PREVIEW_BASE ?? "/preview";
+
 interface PreviewPaneProps {
   slug: string;
   content: string;
@@ -14,7 +16,7 @@ export function PreviewPane({ slug }: PreviewPaneProps) {
 
   return (
     <iframe
-      src={`/preview/${slug}.html`}
+      src={`${PREVIEW_BASE}/${slug}.html`}
       className="w-full h-full border-0"
       title="Quarto Preview"
     />

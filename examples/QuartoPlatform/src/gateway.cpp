@@ -17,6 +17,8 @@
 #include <atomic>
 #include <chrono>
 #include <csignal>
+#include <filesystem>
+#include <fstream>
 #include <thread>
 
 #if HAS_CURL
@@ -402,13 +404,31 @@ int run_gateway(const Config& config) {
         ctx.SendJson(j.dump());
     });
 
-    // --- Static files ---
+    // --- Static files + SPA fallback ---
+    const std::string frontend_root = "/srv/frontend";
     server.Use(std::make_shared<serverweb::middleware::StaticFiles>(
         serverweb::middleware::StaticFilesOptions{
-            .root = "/srv/frontend",
+            .root = frontend_root,
             .prefix = "/",
             .index_files = {"index.html"},
         }));
+
+    {
+        auto index_path = std::filesystem::path(frontend_root) / "index.html";
+        if (std::filesystem::exists(index_path)) {
+            std::ifstream f(index_path);
+            auto index_content = std::string(
+                std::istreambuf_iterator<char>(f), {});
+            auto spa = [index_content](serverweb::RequestContext& ctx) {
+                ctx.response.Status(serverweb::HttpStatus::kOk)
+                    .ContentType("text/html; charset=utf-8")
+                    .Body(index_content)
+                    .Send();
+            };
+            server.Get("/", spa);
+            server.Get("/*path", spa);
+        }
+    }
 
     // --- Cleanup thread ---
     std::atomic<bool> cleanup_running{true};

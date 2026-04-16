@@ -9,12 +9,18 @@
 namespace quarto {
 
 static std::string ExpandEnv(const std::string& value) {
-    static const std::regex env_re(R"(\$\{(\w+)\})");
+    // Supports ${VAR} and ${VAR:-default}
+    static const std::regex env_re(R"(\$\{(\w+)(?::-([^}]*))?\})");
     std::string result = value;
     std::smatch match;
     while (std::regex_search(result, match, env_re)) {
         const char* env_val = std::getenv(match[1].str().c_str());
-        std::string replacement = env_val ? env_val : "";
+        std::string replacement;
+        if (env_val) {
+            replacement = env_val;
+        } else if (match[2].matched) {
+            replacement = match[2].str();
+        }
         result = match.prefix().str() + replacement + match.suffix().str();
     }
     return result;
@@ -27,8 +33,14 @@ static std::string GetStr(const YAML::Node& node, const std::string& key,
 }
 
 static int GetInt(const YAML::Node& node, const std::string& key, int default_val = 0) {
-    if (node[key]) return node[key].as<int>();
-    return default_val;
+    if (!node[key]) return default_val;
+    // Support env var expansion in integer fields (e.g., port: "${SERVER_PORT:-8080}")
+    try {
+        return node[key].as<int>();
+    } catch (...) {
+        auto expanded = ExpandEnv(node[key].as<std::string>());
+        return expanded.empty() ? default_val : std::stoi(expanded);
+    }
 }
 
 static bool GetBool(const YAML::Node& node, const std::string& key, bool default_val = false) {
@@ -103,6 +115,7 @@ Config Config::Load(const std::string& path) {
         cfg.editor.published = GetStr(e, "published", "/published");
         cfg.editor.user_id = GetStr(e, "user_id");
         cfg.editor.preview_port = static_cast<std::uint16_t>(GetInt(e, "preview_port", 4000));
+        cfg.editor.static_dir = GetStr(e, "static_dir");
     }
 
     if (auto q = root["quarto"]) {

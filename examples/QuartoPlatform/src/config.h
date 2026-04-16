@@ -56,6 +56,7 @@ struct EditorModeConfig {
     std::string published = "/published";
     std::string user_id;
     std::uint16_t preview_port = 4000;
+    std::string static_dir;  // frontend dist/ path; empty = no static serving
 };
 
 struct QuartoConfig {

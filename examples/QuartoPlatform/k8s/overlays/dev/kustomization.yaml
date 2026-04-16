@@ -8,8 +8,8 @@ resources:
 
 images:
   - name: quarto-gateway
-    newName: localhost:5000/quarto-server
+    newName: k3d-quarto-registry:5000/quarto-server
     newTag: gateway-latest
   - name: quarto-editor
-    newName: localhost:5000/quarto-server
+    newName: k3d-quarto-registry:5000/quarto-server
     newTag: editor-latest

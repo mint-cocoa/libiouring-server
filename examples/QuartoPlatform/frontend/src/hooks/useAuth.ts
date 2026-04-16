@@ -11,6 +11,11 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (import.meta.env.VITE_DEV_USER) {
+      setUser({ user_id: import.meta.env.VITE_DEV_USER, github_id: 0 });
+      setLoading(false);
+      return;
+    }
     api<User>("/auth/me")
       .then(setUser)
       .catch(() => setUser(null))

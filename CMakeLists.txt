@@ -90,6 +90,8 @@ target_compile_options(ServerCore
         -Wall -Wextra -Wpedantic
 )
 
+option(BUILD_EXAMPLES "Build example applications" ON)
+
 # --- Examples (core-only) ----
 
 set(_EXAMPLE_DIRS
@@ -106,39 +108,45 @@ set(_EXAMPLE_DIRS
     examples/benchmarks/GameServerEpoll
     tools
 )
-foreach(_dir IN LISTS _EXAMPLE_DIRS)
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${_dir}/CMakeLists.txt")
-        add_subdirectory(${_dir})
-    endif()
-endforeach()
+if(BUILD_EXAMPLES)
+    foreach(_dir IN LISTS _EXAMPLE_DIRS)
+        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${_dir}/CMakeLists.txt")
+            add_subdirectory(${_dir})
+        endif()
+    endforeach()
+endif()
 
 if(EXISTS "${CMAKE_SOURCE_DIR}/examples/QuartoPlatform")
     add_subdirectory(examples/QuartoPlatform)
 endif()
 
+option(BUILD_STORAGE "Build ServerStorage (requires PostgreSQL libpq)" ON)
+
 # --- ServerStorage (PostgreSQL worker-pool storage) ----
 
-pkg_check_modules(LIBPQ REQUIRED IMPORTED_TARGET libpq)
+if(BUILD_STORAGE)
+    pkg_check_modules(LIBPQ REQUIRED IMPORTED_TARGET libpq)
 
-add_library(ServerStorage STATIC
-    src/storage/PgResult.cpp
-    src/storage/PgConnection.cpp
-    src/storage/PgWorkerPool.cpp
-    src/storage/PgConnectionPool.cpp
-)
+    add_library(ServerStorage STATIC
+        src/storage/PgResult.cpp
+        src/storage/PgConnection.cpp
+        src/storage/PgWorkerPool.cpp
+        src/storage/PgConnectionPool.cpp
+    )
 
-target_include_directories(ServerStorage
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
-)
+    target_include_directories(ServerStorage
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<INSTALL_INTERFACE:include>
+    )
 
-target_link_libraries(ServerStorage
-    PUBLIC ServerCore
-    PRIVATE PkgConfig::LIBPQ
-)
+    target_link_libraries(ServerStorage
+        PUBLIC ServerCore
+        PRIVATE PkgConfig::LIBPQ
+    )
 
-target_compile_options(ServerStorage PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(ServerStorage PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
 # --- ServerWeb (HTTP framework) ----
 

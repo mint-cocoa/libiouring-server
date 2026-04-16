@@ -3,6 +3,8 @@
 
 #include <serverweb/WebServer.h>
 #include <serverweb/LoggerMiddleware.h>
+#include <serverweb/CorsMiddleware.h>
+#include <serverweb/StaticFiles.h>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 
@@ -58,7 +60,9 @@ int run_editor(const Config& config) {
         workspace.string(), published.string(), user_id,
         config.quarto.render_profile, config.quarto.timeout);
 
-    quarto.StartPreview(config.editor.preview_port);
+    if (config.editor.preview_port > 0) {
+        quarto.StartPreview(config.editor.preview_port);
+    }
 
     serverweb::WebServerConfig ws_config;
     ws_config.port = config.server.port;
@@ -66,6 +70,16 @@ int run_editor(const Config& config) {
     serverweb::WebServer server(ws_config);
 
     server.Use(std::make_shared<serverweb::middleware::Logger>());
+    server.Use(std::make_shared<serverweb::middleware::Cors>(
+        serverweb::middleware::CorsOptions{
+            .allowed_origins = {"*"},
+            .allow_credentials = true,
+        }));
+
+    // Auth stub — editor mode runs as a single user, no real auth needed
+    server.Get("/auth/me", [&user_id](serverweb::RequestContext& ctx) {
+        ctx.SendJson(nlohmann::json{{"user_id", user_id}, {"github_id", 0}}.dump());
+    });
 
     // Health
     server.Get("/health", [&quarto, &user_id](serverweb::RequestContext& ctx) {
@@ -170,6 +184,46 @@ int run_editor(const Config& config) {
         }
         ctx.SendJson(nlohmann::json{{"published", items}}.dump());
     });
+
+    // CORS preflight handler
+    auto cors_preflight = [](serverweb::RequestContext& ctx) {
+        ctx.response.Status(serverweb::HttpStatus::kNoContent)
+            .Header("Access-Control-Allow-Origin", "*")
+            .Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+            .Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+            .Header("Access-Control-Max-Age", "86400")
+            .Send();
+    };
+    server.Route(serverweb::HttpMethod::kOptions, "/documents", cors_preflight);
+    server.Route(serverweb::HttpMethod::kOptions, "/documents/:slug", cors_preflight);
+    server.Route(serverweb::HttpMethod::kOptions, "/publish", cors_preflight);
+    server.Route(serverweb::HttpMethod::kOptions, "/publish/:slug", cors_preflight);
+
+    // Static files + SPA fallback (when static_dir is configured)
+    auto static_dir = config.editor.static_dir;
+    if (!static_dir.empty() && fs::exists(static_dir)) {
+        // Serve static assets (JS, CSS, images, etc.)
+        server.Use(std::make_shared<serverweb::middleware::StaticFiles>(
+            serverweb::middleware::StaticFilesOptions{
+                .root = static_dir,
+                .prefix = "/",
+                .index_files = {"index.html"},
+            }));
+
+        // SPA fallback: serve index.html for unmatched GET routes
+        auto index_path = fs::path(static_dir) / "index.html";
+        auto index_content = ReadFile(index_path);
+        auto spa_handler = [index_content](serverweb::RequestContext& ctx) {
+            ctx.response.Status(serverweb::HttpStatus::kOk)
+                .ContentType("text/html; charset=utf-8")
+                .Body(index_content)
+                .Send();
+        };
+        server.Get("/", spa_handler);
+        server.Get("/*path", spa_handler);
+
+        spdlog::info("[Editor] Serving static files from {}", static_dir);
+    }
 
     static std::atomic<bool> running{true};
     std::signal(SIGINT, [](int) { running = false; });

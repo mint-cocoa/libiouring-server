@@ -9,6 +9,7 @@ editor:
   published: "${PUBLISHED:-/published}"
   user_id: "${USER_ID:-unknown}"
   preview_port: 4000
+  static_dir: /srv/frontend
 
 quarto:
   render_profile: production

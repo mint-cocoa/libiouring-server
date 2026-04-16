@@ -9,6 +9,7 @@ FetchContent_Declare(
 )
 set(DISABLE_TESTS ON CACHE BOOL "" FORCE)
 set(ENABLE_SSL OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(hiredis)
 
 # libcurl (optional — OAuth and K8s client need it at runtime)
