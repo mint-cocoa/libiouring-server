@@ -17,8 +17,8 @@ proxy:
       upstream_host: "editor"
       upstream_port: 8080
     - path_prefix: "/preview/"
-      upstream_host: "editor"
-      upstream_port: 4000
+      upstream_host: "localhost"
+      upstream_port: 4001
       websocket: true
 
 static_sites:
